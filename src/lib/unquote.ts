@@ -6,7 +6,7 @@
  *
  * @param text
  */
-export default function unquote(text?: string): string {
+export function unquote(text?: string): string {
   if (!text) {
     return ''
   }

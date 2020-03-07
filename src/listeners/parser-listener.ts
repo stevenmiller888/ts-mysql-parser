@@ -21,7 +21,7 @@ import {
   FieldsContext
 } from '../grammar/MySQLParser'
 import { MySQLParserListener } from '../grammar/MySQLParserListener'
-import unquote from '../lib/unquote'
+import { unquote } from '../lib/unquote'
 import { RuleContext } from 'antlr4ts'
 
 export enum ReferenceType {
