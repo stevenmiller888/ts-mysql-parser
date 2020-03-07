@@ -8,6 +8,7 @@
     "strict": true,
     "sourceMap": true,
     "incremental": true,
+    "declaration": true,
     "outDir": "dist",
     "noUnusedLocals": true,
     "noUnusedParameters": true,

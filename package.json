@@ -20,6 +20,7 @@
     "dist"
   ],
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "pub": "np",
     "test": "jest",
