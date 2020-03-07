@@ -141,6 +141,10 @@ This project is built on [Antlr4](https://github.com/antlr/antlr4) with the MySQ
 
 The `MySQLBaseLexer` class represents a superclass to the lexer class and customizes lexer functionality, such as emitting multiple tokens per rule. Similarly, the `MySQLBaseParser` class represents a superclass to the parser class and customizes parser functionality. These superclasses allow us to change the MySQL version, mode, and character sets at runtime.
 
+## Related
+
+- [ts-antlr4-scanner](https://github.com/stevenmiller888/ts-antlr4-scanner) - A scanner for antlr4-based lexers
+
 ## License
 
 [MIT](https://tldrlegal.com/license/mit-license)
