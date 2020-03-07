@@ -1,6 +1,6 @@
 {
   "name": "ts-mysql-parser",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A fully featured standalone MySQL parser.",
   "license": "MIT",
   "repository": "segmentio/ts-mysql-parser",
