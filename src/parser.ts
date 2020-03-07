@@ -1,6 +1,13 @@
-import { ANTLRInputStream, CommonTokenStream, Token, BailErrorStrategy, DefaultErrorStrategy } from 'antlr4ts'
+import {
+  ANTLRInputStream,
+  CommonTokenStream,
+  Token,
+  BailErrorStrategy,
+  DefaultErrorStrategy,
+  RuleContext
+} from 'antlr4ts'
 import { MySQLParserListener } from './grammar/MySQLParserListener'
-import { MySQLParser, QueryContext } from './grammar/MySQLParser'
+import { MySQLParser } from './grammar/MySQLParser'
 import { MySQLLexer } from './grammar/MySQLLexer'
 import { ParserListener, Reference, ReferenceType } from './listeners/parser-listener'
 import { ParserErrorListener } from './listeners/parser-error-listener'
@@ -12,6 +19,7 @@ import { LexerError, ParserError } from './listeners/errors'
 import { MySQLQueryType } from './lib/parsers-common'
 import { PredictionMode } from 'antlr4ts/atn/PredictionMode'
 import { SqlMode } from './grammar/common'
+import { RuleName } from './lib/rule-name'
 
 /** Statement represents a single MySQL query */
 export interface Statement {
@@ -31,14 +39,14 @@ export interface ParseResult {
   parserError?: ParserError
   /** The error that ocurrred during the lexing phase */
   lexerError?: LexerError
-  /** The root of the parse tree */
-  queryContext?: QueryContext
   /** The references found during parsing (e.g. tables, columns, etc.) */
   references: Reference[]
   /** The generated MySQL parser */
   parser: MySQLParser
   /** The generated MySQL lexer */
   lexer: MySQLLexer
+  /** The parse tree */
+  tree: RuleContext
 }
 
 /** ParserOptions represents the options passed into the parser */
@@ -85,10 +93,11 @@ export default class Parser {
    *  6. Resolve references found during parse
    *  7. Return relevant parsing results
    *
-   * @param query
+   * @param query - the query to parse
+   * @param context - the optional rule context to invoke. defaults to `.query()`
    * @returns ParseResult
    */
-  public parse(query: string): ParseResult {
+  public parse(query: string, context: RuleName = RuleName.query): ParseResult {
     const inputStream = new ANTLRInputStream(query)
     const lexer = new MySQLLexer(inputStream)
     const tokenStream = new CommonTokenStream(lexer)
@@ -127,16 +136,16 @@ export default class Parser {
     //    step 2: if step 1 fails, use full LL parse to ensure we have a real failure
     parser.interpreter.setPredictionMode(PredictionMode.SLL)
     parser.errorHandler = new BailErrorStrategy()
-    let queryContext: QueryContext
+    let tree: RuleContext
     try {
-      queryContext = parser.query()
+      tree = parser[context]()
     } catch (e) {
       inputStream.reset()
       lexerErrorListener.error = undefined
       parserErrorListener.error = undefined
       parser.errorHandler = new DefaultErrorStrategy()
       parser.interpreter.setPredictionMode(PredictionMode.LL)
-      queryContext = parser.query()
+      tree = parser[context]()
     }
 
     let references: Reference[] = []
@@ -148,10 +157,10 @@ export default class Parser {
       parserError: parserErrorListener.error,
       lexerError: lexerErrorListener.error,
       parserListener,
-      queryContext,
       references,
       parser,
-      lexer
+      lexer,
+      tree
     }
   }
 
