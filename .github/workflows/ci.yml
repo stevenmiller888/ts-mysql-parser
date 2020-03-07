@@ -1,0 +1,40 @@
+name: CI
+
+on: [push]
+
+env:
+  CI: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12]
+
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache Node.js dependencies
+        uses: actions/cache@v1
+        with:
+          path: node_modules
+          key: node${{ matrix.node-version }}-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Install Node.js dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Build TypeScript
+        run: yarn build
+
+      - name: Lint files
+        run: yarn lint
+
+      - name: Run tests
+        run: yarn test
