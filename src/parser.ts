@@ -39,6 +39,10 @@ export interface ParseResult {
   parserError?: ParserError
   /** The error that ocurrred during the lexing phase */
   lexerError?: LexerError
+  /** The token stream that was fed into the parser */
+  tokenStream: CommonTokenStream
+  /** The input stream that was fed into the lexer */
+  inputStream: ANTLRInputStream
   /** The references found during parsing (e.g. tables, columns, etc.) */
   references: Reference[]
   /** The generated MySQL parser */
@@ -157,6 +161,8 @@ export default class Parser {
       parserError: parserErrorListener.error,
       lexerError: lexerErrorListener.error,
       parserListener,
+      tokenStream,
+      inputStream,
       references,
       parser,
       lexer,
