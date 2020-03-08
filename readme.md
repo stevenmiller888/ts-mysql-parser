@@ -1,8 +1,10 @@
 # ts-mysql-parser
 
-![Alt Text](https://github.com/segmentio/ts-mysql-parser/workflows/CI/badge.svg)
+![Alt Text](https://github.com/stevenmiller888/ts-mysql-parser/workflows/CI/badge.svg)
 
 > A standalone, grammar-complete MySQL parser.
+
+![Alt Text](https://github.com/stevenmiller888/ts-mysql-parser/raw/master/.github/code.png)
 
 ## Features
 
