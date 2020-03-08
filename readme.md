@@ -4,7 +4,7 @@
 
 > A standalone, grammar-complete MySQL parser.
 
-![Alt Text](https://github.com/stevenmiller888/ts-mysql-parser/raw/master/.github/code.png)
+![Alt Text](https://github.com/stevenmiller888/ts-mysql-parser/raw/master/.github/demo.png)
 
 ## Features
 
