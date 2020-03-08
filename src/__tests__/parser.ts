@@ -1,5 +1,6 @@
 import Parser, { Statement } from '../parser'
 import { LexerError } from '../listeners/errors'
+import { RuleName } from '../lib/rule-name'
 import { SqlMode } from '../'
 import path from 'path'
 import fs from 'fs'
@@ -1139,6 +1140,13 @@ describe('Parser', () => {
           line: 1
         }
       })
+    })
+
+    it('supports specifying parse context', () => {
+      const parser = new Parser()
+      const result = parser.parse('FROM users', RuleName.fromClause)
+      expect(result.lexerError).toBeUndefined()
+      expect(result.parserError).toBeUndefined()
     })
 
     const parser = new Parser({ mode: SqlMode.AnsiQuotes, charsets })
