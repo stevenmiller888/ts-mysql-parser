@@ -1,6 +1,6 @@
 {
   "name": "ts-mysql-parser",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A standalone, grammar-complete MySQL parser.",
   "license": "MIT",
   "repository": "stevenmiller888/ts-mysql-parser",
