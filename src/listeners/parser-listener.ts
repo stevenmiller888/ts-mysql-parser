@@ -18,7 +18,8 @@ import {
   PrimaryExprPredicateContext,
   WhereClauseContext,
   ValuesContext,
-  FieldsContext
+  FieldsContext,
+  SelectAliasContext
 } from '../grammar/MySQLParser'
 import { MySQLParserListener } from '../grammar/MySQLParserListener'
 import { unquote } from '../lib/unquote'
@@ -76,7 +77,8 @@ export interface ColumnReference {
 
 export interface AliasReference {
   type: ReferenceType
-  tableReference: TableReference
+  columnReference: ColumnReference | null
+  tableReference: TableReference | null
   alias: string
   start: number
   stop: number
@@ -315,15 +317,14 @@ function getColumnReference(ctx: ColumnRefContext | null): ColumnReference | nul
 function getParentColumnRef(ctx: PredicateContext): ColumnRefContext | null {
   const parent = ctx.parent
 
-  // SELECT
   if (parent instanceof PrimaryExprCompareContext) {
     const columnRef = getNestedColumnRef(parent.boolPri())
     return columnRef
   }
 
-  // INSERT
   if (parent instanceof PrimaryExprPredicateContext) {
-    // ... TODO
+    const columnRef = getNestedColumnRef(parent.predicate())
+    return columnRef
   }
 
   return null
@@ -389,7 +390,41 @@ export class ParserListener implements MySQLParserListener {
     const aliasChild = ctx.getChild(1) as IdentifierContext
     const aliasReference: AliasReference = {
       type: ReferenceType.AliasRef,
+      columnReference: null,
       tableReference,
+      alias: unquote(aliasChild.text),
+      start: aliasChild.start.startIndex,
+      stop: aliasChild.start.stopIndex
+    }
+
+    this.aliasReferences.push(aliasReference)
+  }
+
+  exitSelectAlias(ctx: SelectAliasContext): void {
+    if (!ctx.parent) {
+      return
+    }
+
+    const predicate = ctx.parent
+      .getChild(0)
+      .getChild(0)
+      .getChild(0) as PredicateContext
+
+    if (!predicate) {
+      return
+    }
+
+    const columnRef = getParentColumnRef(predicate)
+
+    const aliasChild = ctx.tryGetChild(1, IdentifierContext)
+    if (!aliasChild) {
+      return
+    }
+
+    const aliasReference: AliasReference = {
+      type: ReferenceType.AliasRef,
+      columnReference: getColumnReference(columnRef),
+      tableReference: null,
       alias: unquote(aliasChild.text),
       start: aliasChild.start.startIndex,
       stop: aliasChild.start.stopIndex
@@ -406,7 +441,6 @@ export class ParserListener implements MySQLParserListener {
 
     const columnRef = getParentColumnRef(ctx)
 
-    // TODO: find tableReference for columnReference
     const valueReference: ValueReference = {
       type: ReferenceType.ValueRef,
       context: getReferenceContext(ctx),
