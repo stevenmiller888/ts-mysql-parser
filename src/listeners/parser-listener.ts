@@ -416,7 +416,11 @@ export class ParserListener implements MySQLParserListener {
 
     const columnRef = getParentColumnRef(predicate)
 
-    const aliasChild = ctx.getChild(1) as IdentifierContext
+    const aliasChild = ctx.tryGetChild(1, IdentifierContext)
+    if (!aliasChild) {
+      return
+    }
+
     const aliasReference: AliasReference = {
       type: ReferenceType.AliasRef,
       columnReference: getColumnReference(columnRef),
