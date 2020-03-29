@@ -1160,6 +1160,7 @@ describe('Parser', () => {
           const result = parser.parse(statement1.text)
           expect(result.lexerError).toBeUndefined()
           expect(result.parserError).toBeUndefined()
+          expect(result.references).toMatchSnapshot()
           return
         }
 
@@ -1169,6 +1170,7 @@ describe('Parser', () => {
           const result = parser.parse(statement2.text)
           expect(result.lexerError).toBeUndefined()
           expect(result.parserError).toBeUndefined()
+          expect(result.references).toMatchSnapshot()
           return
         }
 
@@ -1178,6 +1180,7 @@ describe('Parser', () => {
           const result = parser.parse(statement3.text)
           expect(result.lexerError).toBeUndefined()
           expect(result.parserError).toBeUndefined()
+          expect(result.references).toMatchSnapshot()
           return
         }
       })
