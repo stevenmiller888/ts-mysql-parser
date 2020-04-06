@@ -9,12 +9,22 @@ import {
 import { MySQLParserListener } from './grammar/MySQLParserListener'
 import { MySQLParser } from './grammar/MySQLParser'
 import { MySQLLexer } from './grammar/MySQLLexer'
-import { ParserListener, Reference, ReferenceType } from './listeners/parser-listener'
+import {
+  ParserListener,
+  Reference,
+  ReferenceType,
+  FunctionReference,
+  KeywordReference,
+  ColumnReference,
+  TableReference,
+  AliasReference,
+  ValueReference
+} from './listeners/parser-listener'
 import { ParserErrorListener } from './listeners/parser-error-listener'
 import { LexerErrorListener } from './listeners/lexer-error-listener'
 import { reservedKeywordsForVersion, keywordsForVersion, versionToNumber } from './lib/version'
+import { resolveColumns, resolveValues } from './lib/resolve-references'
 import { skipLeadingWhitespace } from './lib/skip-leading-whitespace'
-import { resolveReferences } from './lib/resolve-references'
 import { LexerError, ParserError } from './listeners/errors'
 import { MySQLQueryType } from './lib/parsers-common'
 import { PredictionMode } from 'antlr4ts/atn/PredictionMode'
@@ -43,14 +53,23 @@ export interface ParseResult {
   tokenStream: CommonTokenStream
   /** The input stream that was fed into the lexer */
   inputStream: ANTLRInputStream
-  /** The references found during parsing (e.g. tables, columns, etc.) */
-  references: Reference[]
   /** The generated MySQL parser */
   parser: MySQLParser
   /** The generated MySQL lexer */
   lexer: MySQLLexer
   /** The parse tree */
   tree: RuleContext
+  /** The references found during parsing (e.g. tables, columns, etc.) */
+  references: References
+}
+
+export interface References {
+  functionReferences: FunctionReference[]
+  keywordReferences: KeywordReference[]
+  columnReferences: ColumnReference[]
+  tableReferences: TableReference[]
+  aliasReferences: AliasReference[]
+  valueReferences: ValueReference[]
 }
 
 /** ParserOptions represents the options passed into the parser */
@@ -152,9 +171,30 @@ export default class Parser {
       tree = parser[context]()
     }
 
-    let references: Reference[] = []
+    const references: References = {
+      functionReferences: [],
+      keywordReferences: [],
+      columnReferences: [],
+      tableReferences: [],
+      aliasReferences: [],
+      valueReferences: []
+    }
+
     if (parserListener instanceof ParserListener) {
-      references = resolveReferences(parserListener)
+      const {
+        functionReferences,
+        keywordReferences,
+        columnReferences,
+        tableReferences,
+        aliasReferences,
+        valueReferences
+      } = parserListener
+      references.functionReferences = functionReferences
+      references.keywordReferences = keywordReferences
+      references.columnReferences = resolveColumns(columnReferences, tableReferences)
+      references.tableReferences = tableReferences
+      references.aliasReferences = aliasReferences
+      references.valueReferences = resolveValues(valueReferences, tableReferences, columnReferences)
     }
 
     return {
@@ -221,7 +261,25 @@ export default class Parser {
   public getReferenceAtOffset(parseResult: ParseResult, offset: number): Reference | null {
     let found: Reference | null = null
 
-    for (const reference of parseResult.references) {
+    const {
+      functionReferences,
+      keywordReferences,
+      columnReferences,
+      tableReferences,
+      aliasReferences,
+      valueReferences
+    } = parseResult.references
+
+    const references = [
+      ...functionReferences,
+      ...keywordReferences,
+      ...columnReferences,
+      ...tableReferences,
+      ...aliasReferences,
+      ...valueReferences
+    ]
+
+    for (const reference of references) {
       if (offset >= reference.start && offset <= reference.stop) {
         found = reference
         break

@@ -61,6 +61,7 @@ export interface SchemaReference {
 export interface TableReference {
   type: ReferenceType
   schemaReference: SchemaReference | null
+  aliasReference: AliasReference | null
   table: string
   start: number
   stop: number
@@ -70,6 +71,7 @@ export interface ColumnReference {
   type: ReferenceType
   context: ReferenceContext | null
   tableReference: TableReference | null
+  aliasReference: AliasReference | null
   column: string
   start: number
   stop: number
@@ -213,6 +215,7 @@ function getTableReference(ctx: TableRefContext | null): TableReference | null {
       return {
         type: ReferenceType.TableRef,
         table: unquote(dotIdentifier.identifier().text),
+        aliasReference: null,
         schemaReference: {
           type: ReferenceType.SchemaRef,
           schema: first,
@@ -226,6 +229,7 @@ function getTableReference(ctx: TableRefContext | null): TableReference | null {
 
     return {
       type: ReferenceType.TableRef,
+      aliasReference: null,
       schemaReference: null,
       table: first,
       start: identifier.start.startIndex,
@@ -237,6 +241,7 @@ function getTableReference(ctx: TableRefContext | null): TableReference | null {
   if (identifier) {
     return {
       type: ReferenceType.TableRef,
+      aliasReference: null,
       schemaReference: null,
       table: unquote(identifier.text),
       start: identifier.start.startIndex,
@@ -277,8 +282,10 @@ function getColumnReference(ctx: ColumnRefContext | null): ColumnReference | nul
         type: ReferenceType.ColumnRef,
         context: getReferenceContext(ctx),
         column: unquote(dotIdentifier.identifier().text),
+        aliasReference: null,
         tableReference: {
           type: ReferenceType.TableRef,
+          aliasReference: null,
           schemaReference: null,
           table: first,
           start,
@@ -293,6 +300,7 @@ function getColumnReference(ctx: ColumnRefContext | null): ColumnReference | nul
       type: ReferenceType.ColumnRef,
       column: first,
       context: getReferenceContext(ctx),
+      aliasReference: null,
       tableReference: getParentTableReference(context),
       start,
       stop
@@ -305,6 +313,7 @@ function getColumnReference(ctx: ColumnRefContext | null): ColumnReference | nul
       type: ReferenceType.ColumnRef,
       column: unquote(identifier.text),
       context: getReferenceContext(ctx),
+      aliasReference: null,
       tableReference: getParentTableReference(context),
       start: identifier.start.startIndex,
       stop: identifier.start.stopIndex
@@ -373,21 +382,25 @@ export class ParserListener implements MySQLParserListener {
       return
     }
 
-    const tableChild = ctx.parent.getChild(0) as TableRefContext
+    const tableChild = ctx.parent.tryGetChild(0, TableRefContext)
+    if (!tableChild) {
+      return
+    }
+
     const tableReference: TableReference = {
       type: ReferenceType.TableRef,
+      aliasReference: null,
       schemaReference: null,
       table: unquote(tableChild.text),
       start: tableChild.start.startIndex,
       stop: tableChild.start.stopIndex
     }
 
-    const childCount = ctx.childCount
-    if (childCount < 2) {
+    const aliasChild = ctx.tryGetChild(0, IdentifierContext)
+    if (!aliasChild) {
       return
     }
 
-    const aliasChild = ctx.getChild(1) as IdentifierContext
     const aliasReference: AliasReference = {
       type: ReferenceType.AliasRef,
       columnReference: null,
@@ -416,7 +429,7 @@ export class ParserListener implements MySQLParserListener {
 
     const columnRef = getParentColumnRef(predicate)
 
-    const aliasChild = ctx.tryGetChild(1, IdentifierContext)
+    const aliasChild = ctx.tryGetChild(0, IdentifierContext)
     if (!aliasChild) {
       return
     }
